@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Pothole Detection System</title>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f0f4f8;
+            color: #333;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        header {
+            background-color: #2c3e50;
+            color: white;
+            padding: 1rem 0;
+            text-align: center;
+        }
+        nav {
+            background-color: #34495e;
+            padding: 0.5rem 0;
+        }
+        nav ul {
+            list-style-type: none;
+            padding: 0;
+            margin: 0;
+            display: flex;
+            justify-content: center;
+        }
+        nav ul li {
+            margin: 0 1rem;
+        }
+        nav ul li a {
+            color: white;
+            text-decoration: none;
+            font-weight: bold;
+        }
+        h1, h2 {
+            color: #2c3e50;
+        }
+        #videoContainer {
+            position: relative;
+            width: 100%;
+            max-width: 640px;
+            margin: 2rem auto;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        #videoFeed {
+            width: 100%;
+            height: auto;
+            display: block;
+        }
+        #overlay {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            background-color: rgba(0, 0, 0, 0.6);
+            color: white;
+            padding: 5px 10px;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+        #controls {
+            margin-top: 20px;
+            text-align: center;
+        }
+        button {
+            margin: 10px;
+            padding: 12px 24px;
+            font-size: 16px;
+            cursor: pointer;
+            background-color: #3498db;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            transition: background-color 0.3s ease;
+        }
+        button:hover {
+            background-color: #2980b9;
+        }
+        button:disabled {
+            background-color: #bdc3c7;
+            cursor: not-allowed;
+        }
+        #count {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            text-align: center;
+        }
+        #progressBar {
+            width: 100%;
+            height: 10px;
+            background-color: #ecf0f1;
+            border-radius: 5px;
+            margin-top: 10px;
+            overflow: hidden;
+        }
+        #progressFill {
+            width: 0%;
+            height: 100%;
+            background-color: #2ecc71;
+            transition: width 1s linear;
+        }
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+            margin-top: 2rem;
+        }
+        .card {
+            background-color: white;
+            border-radius: 8px;
+            padding: 1.5rem;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        #pages > div {
+            display: none;
+        }
+        #pages > div.active {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Smart Pothole Detection System</h1>
+    </header>
+    <nav>
+        <ul>
+            <li><a href="#" onclick="showPage('Home')">Home</a></li>
+            <li><a href="#" onclick="showPage('Detection')">Live Detection</a></li>
+            <li><a href="#" onclick="showPage('Statistics')">Statistics</a></li>
+            <li><a href="#" onclick="showPage('About')">About</a></li>
+        </ul>
+    </nav>
+    <div class="container" id="pages">
+        <div id="home" class="active">
+            <h2>Welcome to Smart Pothole Detection</h2>
+            <p>Our advanced system uses AI to detect and count potholes in real-time. Navigate to the Live Detection page to see it in action!</p>
+            <div class="grid">
+                <div class="card">
+                    <h3>How it works</h3>
+                    <p>Our AI model analyzes video frames to identify potholes accurately. It tracks unique potholes to avoid double-counting.</p>
+                </div>
+                <div class="card">
+                    <h3>Benefits</h3>
+                    <p>Efficient road maintenance, improved safety, and data-driven decision making for urban planning.</p>
+                </div>
+                <div class="card">
+                    <h3>Get Started</h3>
+                    <p>Head to the Live Detection page to start identifying potholes in your area!</p>
+                </div>
+            </div>
+        </div>
+        <div id="detection">
+            <h2>Live Pothole Detection</h2>
+            <div id="videoContainer">
+                <img id="videoFeed" src="{{ url_for('video_feed') }}" alt="Video feed">
+                <div id="overlay">Status: Idle</div>
+            </div>
+            <div id="controls">
+                <button id="startBtn" onclick="startDetection()">Start Detection</button>
+                <button id="stopBtn" onclick="stopDetection()" disabled>Stop Detection</button>
+            </div>
+            <div id="count">
+                <div id="countText">Waiting to start detection...</div>
+                <div id="progressBar">
+                    <div id="progressFill"></div>
+                </div>
+            </div>
+        </div>
+        <div id="statistics">
+            <h2>Pothole Detection Statistics</h2>
+            <div class="grid">
+                <div class="card">
+                    <h3>Hourly Detection</h3>
+                    <canvas id="hourlyChart"></canvas>
+                </div>
+                <div class="card">
+                    <h3>Daily Summary</h3>
+                    <canvas id="dailyChart"></canvas>
+                </div>
+            </div>
+        </div>
+        <div id="about">
+            <h2>About Our Pothole Detection System</h2>
+            <p>Our state-of-the-art pothole detection system uses advanced machine learning algorithms to identify and track potholes in real-time. By leveraging computer vision techniques, we're able to accurately count unique potholes, providing valuable data for road maintenance and urban planning.</p>
+            <h3>Key Features:</h3>
+            <ul>
+                <li>Real-time detection using webcam feed</li>
+                <li>Unique pothole tracking to avoid double-counting</li>
+                <li>Minute-by-minute pothole frequency analysis</li>
+                <li>Historical data visualization for trend analysis</li>
+            </ul>
+            <p>For more information or to contribute to this project, please contact our team.</p>
+        </div>
+    </div>
+    
+    <script>
+        let intervalId;
+        let startTime;
+        const duration = 60; // Duration in seconds
+        let hourlyData = Array(24).fill(0);
+        let dailyData = Array(7).fill(0);
+
+        // Load data from local storage on page load
+        window.onload = function() {
+            loadDataFromLocalStorage();
+            updateCharts();
+        };
+
+        function loadDataFromLocalStorage() {
+            const storedHourlyData = localStorage.getItem('hourlyData');
+            const storedDailyData = localStorage.getItem('dailyData');
+
+            if (storedHourlyData) {
+                hourlyData = JSON.parse(storedHourlyData);
+            }
+            if (storedDailyData) {
+                dailyData = JSON.parse(storedDailyData);
+            }
+        }
+
+        function saveDataToLocalStorage() {
+            localStorage.setItem('hourlyData', JSON.stringify(hourlyData));
+            localStorage.setItem('dailyData', JSON.stringify(dailyData));
+        }
+
+        function showPage(pageId) {
+            document.querySelectorAll('#pages > div').forEach(page => page.classList.remove('active'));
+            document.getElementById(pageId).classList.add('active');
+            if (pageId === 'statistics') {
+                updateCharts();
+            }
+        }
+
+        function startDetection() {
+            axios.get('/start_detection')
+                .then(response => {
+                    console.log(response.data.status);
+                    document.getElementById('overlay').textContent = 'Status: Detecting';
+                    document.getElementById('startBtn').disabled = true;
+                    document.getElementById('stopBtn').disabled = false;
+                    startTime = new Date().getTime();
+                    updateCount();
+                    intervalId = setInterval(updateCount, 1000);
+                })
+                .catch(error => console.error('Error:', error));
+        }
+        
+        function stopDetection() {
+            axios.get('/stop_detection')
+                .then(response => {
+                    console.log(response.data.status);
+                    clearInterval(intervalId);
+                    document.getElementById('overlay').textContent = 'Status: Idle';
+                    document.getElementById('startBtn').disabled = false;
+                    document.getElementById('stopBtn').disabled = true;
+                    document.getElementById('progressFill').style.width = '0%';
+                })
+                .catch(error => console.error('Error:', error));
+        }
+        
+        function updateCount() {
+            axios.get('/get_count')
+                .then(response => {
+                    const result = response.data;
+                    const countElement = document.getElementById('countText');
+                    const progressFill = document.getElementById('progressFill');
+                    
+                    if (result.time_up) {
+                        countElement.textContent = `Potholes detected in the last minute: ${result.count}`;
+                        progressFill.style.width = '100%';
+                        clearInterval(intervalId);
+                        document.getElementById('startBtn').disabled = false;
+                        document.getElementById('stopBtn').disabled = true;
+                        document.getElementById('overlay').textContent = 'Status: Completed';
+                        updateStatistics(result.count);
+                    } else {
+                        const elapsedTime = (new Date().getTime() - startTime) / 1000;
+                        const progress = (elapsedTime / duration) * 100;
+                        countElement.textContent = `Current pothole count: ${result.count}`;
+                        progressFill.style.width = `${progress}%`;
+                    }
+                })
+                .catch(error => console.error('Error:', error));
+        }
+
+        function updateStatistics(count) {
+            const now = new Date();
+            hourlyData[now.getHours()] += count;
+            dailyData[now.getDay()] += count;
+            saveDataToLocalStorage();
+            updateCharts();
+        }
+
+        function updateCharts() {
+            updateHourlyChart();
+            updateDailyChart();
+        }
+
+        function updateHourlyChart() {
+            const ctx = document.getElementById('hourlyChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: Array.from({length: 24}, (_, i) => `${i}:00`),
+                    datasets: [{
+                        label: 'Potholes Detected',
+                        data: hourlyData,
+                        borderColor: 'rgb(75, 192, 192)',
+                        tension: 0.1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+        }
+
+        function updateDailyChart() {
+            const ctx = document.getElementById('dailyChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'],
+                    datasets: [{
+                        label: 'Potholes Detected',
+                        data: dailyData,
+                        backgroundColor: 'rgba(75, 192, 192, 0.6)'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+        }
+    </script>
+</body>
+</html>
