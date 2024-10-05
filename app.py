@@ -4,11 +4,14 @@ import cv2
 import numpy as np
 import time
 import threading
+import os
 
 app = Flask(__name__)
 
 # Load the model
 MODEL_PATH = "latest_full_model.h5"
+if not os.path.exists(MODEL_PATH):
+    raise FileNotFoundError(f"Model file not found: {MODEL_PATH}")
 model = load_model(MODEL_PATH)
 
 # Global variables for pothole counting
@@ -67,33 +70,45 @@ def detect_pothole(frame):
     
     return is_pothole, confidence, frame
 
-def gen_frames():
-    global start_time, pothole_count, is_detecting
-    
-    camera = cv2.VideoCapture(0)
-    while True:
-        success, frame = camera.read()
-        if not success:
-            break
-        else:
-            if is_detecting:
-                is_pothole, confidence, processed_frame = detect_pothole(frame)
-                if is_pothole:
-                    cv2.putText(processed_frame, f"Pothole: {confidence:.2f}", (10, 30),
-                                cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
-                frame = processed_frame
-            
-            ret, buffer = cv2.imencode('.jpg', frame)
-            frame = buffer.tobytes()
-            yield (b'--frame\r\n'
-                   b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
-
 @app.route('/')
 def index():
     return render_template('index.html')
 
 @app.route('/video_feed')
 def video_feed():
+    def gen_frames():
+        try:
+            camera = cv2.VideoCapture(0)
+            if not camera.isOpened():
+                raise Exception("Could not open camera")
+            
+            while True:
+                success, frame = camera.read()
+                if not success:
+                    break
+                else:
+                    if is_detecting:
+                        try:
+                            is_pothole, confidence, processed_frame = detect_pothole(frame)
+                            if is_pothole:
+                                cv2.putText(processed_frame, f"Pothole: {confidence:.2f}", (10, 30),
+                                            cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
+                            frame = processed_frame
+                        except Exception as e:
+                            print(f"Error in detection: {str(e)}")
+                    
+                ret, buffer = cv2.imencode('.jpg', frame)
+                frame = buffer.tobytes()
+                yield (b'--frame\r\n'
+                       b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
+        except Exception as e:
+            print(f"Error in gen_frames: {str(e)}")
+            yield (b'--frame\r\n'
+                   b'Content-Type: image/jpeg\r\n\r\n' + b'Error: Could not access camera' + b'\r\n')
+        finally:
+            if 'camera' in locals():
+                camera.release()
+
     return Response(gen_frames(),
                     mimetype='multipart/x-mixed-replace; boundary=frame')
 
