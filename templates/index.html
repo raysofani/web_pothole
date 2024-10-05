@@ -3,16 +3,18 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Smart Pothole Detection System</title>
+    <title> RoadGuard AI: Smart Pothole Detection System </title>
     <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
     <style>
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-family: 'Poppins', sans-serif;
             margin: 0;
             padding: 0;
-            background-color: #f0f4f8;
+            background-color: #bcebf5;
             color: #333;
+            line-height: 1.6;
         }
         .container {
             max-width: 1200px;
@@ -20,14 +22,20 @@
             padding: 20px;
         }
         header {
-            background-color: #2c3e50;
+            background-color: #3a4750;
             color: white;
             padding: 1rem 0;
             text-align: center;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        header h1 {
+            margin: 0;
+            font-size: 2.5rem;
+            font-weight: 600;
         }
         nav {
-            background-color: #34495e;
-            padding: 0.5rem 0;
+            background-color: #303841;
+            padding: 0;
         }
         nav ul {
             list-style-type: none;
@@ -37,15 +45,21 @@
             justify-content: center;
         }
         nav ul li {
-            margin: 0 1rem;
+            margin: 0;
         }
         nav ul li a {
             color: white;
             text-decoration: none;
-            font-weight: bold;
+            font-weight: 400;
+            transition: color 0.3s ease;
+            padding: 10px 20px;
+            display: block;
+        }
+        nav ul li a:hover {
+            background-color: #00adb5;
         }
         h1, h2 {
-            color: #2c3e50;
+            color: #3a4750;
         }
         #videoContainer {
             position: relative;
@@ -54,7 +68,22 @@
             margin: 2rem auto;
             border-radius: 10px;
             overflow: hidden;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+        .heading {
+            background-color: #ffffff;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            margin: 20px auto;
+            padding: 20px;
+            max-width: 80%;
+            text-align: center;
+        }
+        .heading h1 {
+            margin: 0;
+            color: #3a4750;
+            font-size: 2.5rem;
+            font-weight: 600;
         }
         #videoFeed {
             width: 100%;
@@ -65,11 +94,12 @@
             position: absolute;
             top: 10px;
             left: 10px;
-            background-color: rgba(0, 0, 0, 0.6);
+            background-color: rgba(0, 0, 0, 0.7);
             color: white;
-            padding: 5px 10px;
-            border-radius: 5px;
+            padding: 8px 15px;
+            border-radius: 20px;
             font-size: 14px;
+            font-weight: 600;
         }
         #controls {
             margin-top: 20px;
@@ -80,39 +110,41 @@
             padding: 12px 24px;
             font-size: 16px;
             cursor: pointer;
-            background-color: #3498db;
+            background-color: #00adb5;
             color: white;
             border: none;
-            border-radius: 5px;
-            transition: background-color 0.3s ease;
+            border-radius: 25px;
+            transition: all 0.3s ease;
+            font-weight: 600;
         }
         button:hover {
-            background-color: #2980b9;
+            background-color: #007a8a;
+            transform: translateY(-2px);
         }
         button:disabled {
-            background-color: #bdc3c7;
+            background-color: #c1c1c1;
             cursor: not-allowed;
         }
         #count {
             margin-top: 20px;
-            padding: 15px;
+            padding: 20px;
             background-color: white;
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
             text-align: center;
         }
         #progressBar {
             width: 100%;
             height: 10px;
-            background-color: #ecf0f1;
+            background-color: #e0e0e0;
             border-radius: 5px;
-            margin-top: 10px;
+            margin-top: 15px;
             overflow: hidden;
         }
         #progressFill {
             width: 0%;
             height: 100%;
-            background-color: #2ecc71;
+            background-color: #00adb5;
             transition: width 1s linear;
         }
         .grid {
@@ -123,9 +155,13 @@
         }
         .card {
             background-color: white;
-            border-radius: 8px;
+            border-radius: 10px;
             padding: 1.5rem;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s ease;
+        }
+        .card:hover {
+            transform: translateY(-5px);
         }
         #pages > div {
             display: none;
@@ -133,12 +169,45 @@
         #pages > div.active {
             display: block;
         }
+        .hero-image {
+            width: 100%;
+            max-height: 400px;
+            object-fit: cover;
+            border-radius: 10px;
+            margin-bottom: 2rem;
+        }
+        .feature-image {
+            width: 100%;
+            height: 200px;
+            object-fit: cover;
+            border-radius: 10px;
+            margin-bottom: 1rem;
+        }
+        .about-image {
+            width: 100%;
+            max-height: 300px;
+            object-fit: cover;
+            border-radius: 10px;
+            margin: 2rem 0;
+        }
+        .text-center {
+            text-align: center;
+        }
+        .key-advantages {
+            font-size: 1.2rem;
+        }
+        .key-advantages li {
+            list-style-type: none;
+            margin-bottom: 10px;
+        }
+        .key-advantages li:before {
+            content: "🚗 ";
+            margin-right: 10px;
+        }
     </style>
 </head>
 <body>
-    <header>
-        <h1>Smart Pothole Detection System</h1>
-    </header>
+
     <nav>
         <ul>
             <li><a href="#" onclick="showPage('home')">Home</a></li>
@@ -147,27 +216,34 @@
             <li><a href="#" onclick="showPage('about')">About</a></li>
         </ul>
     </nav>
+    <div class="heading"> <h1>RoadGuard AI: Smart Pothole Detection System</h1></div>
+ 
+    
     <div class="container" id="pages">
         <div id="home" class="active">
-            <h2>Welcome to Smart Pothole Detection</h2>
-            <p>Our advanced system uses AI to detect and count potholes in real-time. Navigate to the Live Detection page to see it in action!</p>
+            <img src="{{ url_for('static', filename='1.png') }}" alt="Smart city with AI-powered road maintenance" class="hero-image">
+            <h2 class="text-center">Welcome to RoadGuard AI</h2>
+            <p class="text-center">Experience the future of road maintenance with our AI-powered pothole detection system. Identify and track road damage in real-time, ensuring safer streets for everyone.</p>
             <div class="grid">
                 <div class="card">
-                    <h3>How it works</h3>
-                    <p>Our AI model analyzes video frames to identify potholes accurately. It tracks unique potholes to avoid double-counting.</p>
+                    <img src="{{ url_for('static', filename='19178.jpg') }}" alt="AI analyzing road conditions" class="feature-image">
+                    <h3>🧠 Cutting-Edge AI</h3>
+                    <p>Our advanced algorithms analyze video feeds to accurately identify and track potholes, preventing double-counting and ensuring precise data collection.</p>
                 </div>
                 <div class="card">
-                    <h3>Benefits</h3>
-                    <p>Efficient road maintenance, improved safety, and data-driven decision making for urban planning.</p>
+                    <img src="{{ url_for('static', filename='4935548.jpg') }}" alt="Real-time road condition updates" class="feature-image">
+                    <h3>⚡ Real-Time Insights</h3>
+                    <p>Get instant updates on road conditions, enabling quick responses to emerging issues and more efficient allocation of maintenance resources.</p>
                 </div>
                 <div class="card">
-                    <h3>Get Started</h3>
-                    <p>Head to the Live Detection page to start identifying potholes in your area!</p>
+                    <img src="{{ url_for('static', filename='Screenshot 2024-10-05 213721.png') }}" alt="Data-driven urban planning" class="feature-image">
+                    <h3>📊 Data-Driven Decisions</h3>
+                    <p>Leverage comprehensive statistics and trends to make informed decisions about road repairs and urban planning initiatives.</p>
                 </div>
             </div>
         </div>
         <div id="detection">
-            <h2>Live Pothole Detection</h2>
+            <h2 class="text-center">Live Pothole Detection</h2>
             <div id="videoContainer">
                 <img id="videoFeed" src="{{ url_for('video_feed') }}" alt="Video feed">
                 <div id="overlay">Status: Idle</div>
@@ -177,38 +253,68 @@
                 <button id="stopBtn" onclick="stopDetection()" disabled>Stop Detection</button>
             </div>
             <div id="count">
-                <div id="countText">Waiting to start detection...</div>
+                <div id="countText">Ready to start detection</div>
                 <div id="progressBar">
                     <div id="progressFill"></div>
                 </div>
             </div>
         </div>
         <div id="statistics">
-            <h2>Pothole Detection Statistics</h2>
+            <h2 class="text-center">Pothole Detection Analytics</h2>
+            <p class="text-center">Explore our comprehensive data on pothole detection, helping you make informed decisions for road maintenance and urban planning.</p>
             <div class="grid">
                 <div class="card">
-                    <h3>Hourly Detection</h3>
+                    <h3>📈 Hourly Trends</h3>
                     <canvas id="hourlyChart"></canvas>
                 </div>
                 <div class="card">
-                    <h3>Daily Summary</h3>
+                    <h3>📅 Daily Overview</h3>
                     <canvas id="dailyChart"></canvas>
+                </div>
+            </div>
+            <div class="grid" style="margin-top: 2rem;">
+                <div class="card">
+                    <img src="{{ url_for('static', filename='pothole.png') }}" alt="Map of pothole hotspots" class="feature-image">
+                    <h3>🗺️ Pothole Hotspots</h3>
+                    <p>Visualize areas with high concentrations of potholes to prioritize maintenance efforts effectively.</p>
+                </div>
+                <div class="card">
+                    <img src="{{ url_for('static', filename='historical.png') }}" alt="Historical data trends" class="feature-image">
+                    <h3>📊 Historical Trends</h3>
+                    <p>Analyze long-term data to identify patterns and predict future road maintenance needs.</p>
                 </div>
             </div>
         </div>
         <div id="about">
-            <h2>About Our Pothole Detection System</h2>
-            <p>Our state-of-the-art pothole detection system uses advanced machine learning algorithms to identify and track potholes in real-time. By leveraging computer vision techniques, we're able to accurately count unique potholes, providing valuable data for road maintenance and urban planning.</p>
-            <h3>Key Features:</h3>
-            <ul>
-                <li>Real-time detection using webcam feed</li>
-                <li>Unique pothole tracking to avoid double-counting</li>
-                <li>Minute-by-minute pothole frequency analysis</li>
-                <li>Historical data visualization for trend analysis</li>
+            <h2 class="text-center">About RoadGuard AI</h2>
+            <img src="{{ url_for('static', filename='ai.jpg') }}" alt="Team working on AI-powered road maintenance" class="about-image">
+            <p>Our state-of-the-art pothole detection system harnesses the power of machine learning to revolutionize road maintenance. By employing advanced computer vision techniques, we provide accurate, real-time data on road conditions, enabling smarter, more efficient urban planning and maintenance strategies.</p>
+            <h3>Key Advantages:</h3>
+            <ul class="key-advantages">
+                <li>Real-time detection using high-definition video feeds</li>
+                <li>Intelligent tracking to eliminate duplicate reports</li>
+                <li>Minute-by-minute analysis for immediate response capabilities</li>
+                <li>Comprehensive data visualization for long-term planning</li>
             </ul>
-            <p>For more information or to contribute to this project, please contact our team.</p>
+            <p>Join us in creating safer, smoother roads for communities everywhere. For partnerships or more information, reach out to our dedicated team of experts.</p>
+            <div class="grid">
+                <div class="card">
+                    <img src="{{ url_for('static', filename='tech.jpg') }}" alt="RoadGuard AI in action" class="feature-image">
+                    <h3>💻 Our Technology</h3>
+                    <p>Learn more about the cutting-edge AI and computer vision technology powering RoadGuard AI.</p>
+                </div>
+                <div class="card">
+                    <img src="{{ url_for('static', filename='hole-in-the-asphalt-road-repair-vector-43608188.jpg') }}" alt="RoadGuard AI team" class="feature-image">
+                    <h3>AI-Driven Innovation</h3>
+                    <p>RoadGuard AI is at the forefront of leveraging artificial intelligence for public safety. By combining real-time detection and advanced analytics, we ensure a proactive approach to maintaining road infrastructure.</p>
+                </div>
+            </div>
         </div>
     </div>
+    
+    
+
+    
     
     <script>
         let intervalId;
