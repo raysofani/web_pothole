@@ -1,0 +1,10 @@
+**/.*
+   **/__pycache__
+   **/node_modules
+   **/*.pyc
+   venv
+   env
+   *.egg-info
+   *.egg
+   dist
+   build
